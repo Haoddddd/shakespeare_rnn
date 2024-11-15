@@ -1,1 +1,1 @@
-# shakespeare_rnn
+# RNN SST
