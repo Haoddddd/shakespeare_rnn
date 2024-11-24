@@ -1,1 +1,1 @@
-# RNN SST
+# RNN (LSTM) SST
