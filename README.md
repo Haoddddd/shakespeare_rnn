@@ -3,11 +3,11 @@ This project explores CPU optimization using the Structural Simulation Toolkit (
 
 ## Overview
 In this repository, you will find:
-- Performance Statistics: CSV files containing memory and cache statistics collected during multiple optimization attempts.
-•	Result & Comparison Spreadsheet: A summarized analysis of CPU performance.
-    o	Sheet 1: Core performance statistics.
-    o	AlexNet Sheet: Data from memory/cache optimizations, including parameter changes for each iteration.
-•	Final Presentation: A detailed presentation of our findings and methodology.
+1. Performance Statistics: CSV files containing memory and cache statistics collected during multiple optimization attempts.
+    - Result & Comparison Spreadsheet: A summarized analysis of CPU performance.
+        - Sheet 1: Core performance statistics.
+       -AlexNet Sheet: Data from memory/cache optimizations, including parameter changes for each iteration.
+2. Final Presentation: A detailed presentation of our findings and methodology.
 
 ## Implementation Details
 The basic_vanadis.py file simulates the Vanadis CPU. We modified several parameters in this file to explore performance optimizations. Each modification's results were saved as a CSV file, and the top 11 iterations were selected based on performance improvements. The selected CSV files are included in this repository for reference.
