@@ -5,7 +5,8 @@ mh_debug=0
 # this has to be a string
 dbgAddr="0"
 stopDbg="0"
-
+statLevel = 16
+statFile = "stats11.csv"
 checkpointDir = ""
 checkpoint = ""
 
@@ -23,7 +24,8 @@ isa="riscv64"
 loader_mode = os.getenv("VANADIS_LOADER_MODE", "0")
 
 testDir="basic-io"
-exe = "hello-world"
+exe = "alexnet"
+#exe = "hello"
 #exe = "hello-world-cpp"
 #exe = "openat"
 #exe = "printf-check"
@@ -69,7 +71,7 @@ sst.setProgramOption("stop-at", "0 ns")
 sst.setStatisticLoadLevel(4)
 sst.setStatisticOutput("sst.statOutputConsole")
 
-full_exe_name = os.getenv("VANADIS_EXE", "./riscv-binaries/hello-world")
+full_exe_name = os.getenv("VANADIS_EXE", "./riscv-binaries/alexnet")
 exe_name= full_exe_name.split("/")[-1]
 
 verbosity = int(os.getenv("VANADIS_VERBOSE", 0))
@@ -78,20 +80,20 @@ pipe_trace_file = os.getenv("VANADIS_PIPE_TRACE", "")
 lsq_ld_entries = os.getenv("VANADIS_LSQ_LD_ENTRIES", 16)
 lsq_st_entries = os.getenv("VANADIS_LSQ_ST_ENTRIES", 8)
 
-rob_slots = os.getenv("VANADIS_ROB_SLOTS", 64)
+rob_slots = os.getenv("VANADIS_ROB_SLOTS", 64) #changed from 64
 retires_per_cycle = os.getenv("VANADIS_RETIRES_PER_CYCLE", 4)
-issues_per_cycle = os.getenv("VANADIS_ISSUES_PER_CYCLE", 4)
+issues_per_cycle = os.getenv("VANADIS_ISSUES_PER_CYCLE", 6) #changed from 4
 decodes_per_cycle = os.getenv("VANADIS_DECODES_PER_CYCLE", 4)
 
 integer_arith_cycles = int(os.getenv("VANADIS_INTEGER_ARITH_CYCLES", 2))
-integer_arith_units = int(os.getenv("VANADIS_INTEGER_ARITH_UNITS", 2))
+integer_arith_units = int(os.getenv("VANADIS_INTEGER_ARITH_UNITS", 4))
 fp_arith_cycles = int(os.getenv("VANADIS_FP_ARITH_CYCLES", 8))
-fp_arith_units = int(os.getenv("VANADIS_FP_ARITH_UNITS", 2))
+fp_arith_units = int(os.getenv("VANADIS_FP_ARITH_UNITS", 4))
 branch_arith_cycles = int(os.getenv("VANADIS_BRANCH_ARITH_CYCLES", 2))
 
-cpu_clock = os.getenv("VANADIS_CPU_CLOCK", "2.3GHz")
+cpu_clock = os.getenv("VANADIS_CPU_CLOCK", "2.3GHz")  #leave alone
 
-numCpus = int(os.getenv("VANADIS_NUM_CORES", 1))
+numCpus = int(os.getenv("VANADIS_NUM_CORES", 1))   #could change but not making a difference
 numThreads = int(os.getenv("VANADIS_NUM_HW_THREADS", 1))
 
 vanadis_cpu_type = "vanadis."
@@ -182,7 +184,7 @@ mmuParams = {
 }
 
 memRtrParams ={
-      "xbar_bw" : "1GB/s",
+      "xbar_bw" : "2GB/s",
       "link_bw" : "1GB/s",
       "input_buf_size" : "2KB",
       "num_ports" : str(numCpus+2),
@@ -246,7 +248,7 @@ decoderParams = {
 osHdlrParams = { }
 
 branchPredParams = {
-    "branch_entries" : 32
+    "branch_entries" : 64 #32
 }
 
 cpuParams = {
@@ -275,36 +277,39 @@ cpuParams = {
     "checkpoint" : checkpoint
 }
 
-lsqParams = {
+lsqParams = {  #load store queue ; cpu to memory
     "verbose" : verbosity,
     "address_mask" : 0xFFFFFFFF,
     "max_stores" : lsq_st_entries,
     "max_loads" : lsq_ld_entries,
 }
 
-l1dcacheParams = {
+l1dcacheParams = { #data  -->lsq
     "access_latency_cycles" : "2",
     "cache_frequency" : cpu_clock,
     "replacement_policy" : "lru",
     "coherence_protocol" : protocol,
-    "associativity" : "8",
+    "associativity" : "16", #default 8
     "cache_line_size" : "64",
-    "cache_size" : "32 KB",
+    "cache_size" : "64 KB", #default 32
     "L1" : "1",
     "debug" : mh_debug,
     "debug_level" : mh_debug_level,
+    "prefetcher" : "cassini.StridePrefetcher",
+    "prefetcher.reach" : 4,
+
 }
 
-l1icacheParams = {
+l1icacheParams = {  #instruction 
     "access_latency_cycles" : "2",
     "cache_frequency" : cpu_clock,
     "replacement_policy" : "lru",
     "coherence_protocol" : protocol,
-    "associativity" : "8",
+    "associativity" : "8", #default 8
     "cache_line_size" : "64",
-    "cache_size" : "32 KB",
+    "cache_size" : "64 KB", #default 32
     "prefetcher" : "cassini.NextBlockPrefetcher",
-    "prefetcher.reach" : 1,
+    "prefetcher.reach" : 2,
     "L1" : "1",
     "debug" : mh_debug,
     "debug_level" : mh_debug_level,
@@ -321,6 +326,8 @@ l2cacheParams = {
     "mshr_latency_cycles": 3,
     "debug" : mh_debug,
     "debug_level" : mh_debug_level,
+    "prefetcher" : "cassini.StridePrefetcher",
+    "prefetcher.reach" : 8,
 }
 busParams = { 
     "bus_frequency" : cpu_clock, 
@@ -585,4 +592,16 @@ for cpu in range(numCpus):
     # connect cpu L2 to router
     link_l2cache_2_rtr = sst.Link(prefix + ".link_l2cache_2_rtr")
     link_l2cache_2_rtr.connect( l2cache, (comp_chiprtr, "port" + str(cpu), "1ns") )
+
+    # Enable SST Statistics Outputs for this simulation
+    sst.setStatisticLoadLevel(statLevel)
+    sst.enableAllStatisticsForAllComponents({"type":"sst.AccumulatorStatistic"})
+
+    sst.setStatisticOutput("sst.statOutputCSV")
+    sst.setStatisticOutputOptions( {
+        "filepath"  : statFile,
+        "separator" : ", "
+        } )
+
+    print("Completed configuring the EX1 model")
 
