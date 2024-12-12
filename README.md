@@ -3,7 +3,7 @@ This project explores CPU optimization using the Structural Simulation Toolkit (
 
 ## Overview
 In this repository, you will find:
-•	Performance Statistics: CSV files containing memory and cache statistics collected during multiple optimization attempts.
+- Performance Statistics: CSV files containing memory and cache statistics collected during multiple optimization attempts.
 •	Result & Comparison Spreadsheet: A summarized analysis of CPU performance.
     o	Sheet 1: Core performance statistics.
     o	AlexNet Sheet: Data from memory/cache optimizations, including parameter changes for each iteration.
